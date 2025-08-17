@@ -104,10 +104,14 @@ class StaffDirectoryScraper:
             ]
             
             for selector in name_selectors:
-                name_elem = element.select_one(selector)
-                if name_elem and name_elem.get_text(strip=True):
-                    name = name_elem.get_text(strip=True)
-                    break
+                try:
+                    name_elem = element.select_one(selector)
+                    if name_elem and name_elem.get_text(strip=True):
+                        name = name_elem.get_text(strip=True)
+                        break
+                except Exception as e:
+                    logging.debug(f"Selector '{selector}' failed: {e}")
+                    continue
             
             # If no name in child elements, check the element itself
             if not name:
@@ -123,27 +127,37 @@ class StaffDirectoryScraper:
             ]
             
             for selector in title_selectors:
-                title_elem = element.select_one(selector)
-                if title_elem and title_elem.get_text(strip=True):
-                    title_text = title_elem.get_text(strip=True)
-                    # Avoid using the name as title
-                    if title_text != name:
-                        title = title_text
-                        break
+                try:
+                    title_elem = element.select_one(selector)
+                    if title_elem and title_elem.get_text(strip=True):
+                        title_text = title_elem.get_text(strip=True)
+                        # Avoid using the name as title
+                        if title_text != name:
+                            title = title_text
+                            break
+                except Exception as e:
+                    logging.debug(f"Title selector '{selector}' failed: {e}")
+                    continue
             
             # Extract additional info
             email = None
             phone = None
             
             # Look for email links
-            email_link = element.select_one('a[href^="mailto:"]')
-            if email_link:
-                email = email_link.get('href').replace('mailto:', '')
+            try:
+                email_link = element.select_one('a[href^="mailto:"]')
+                if email_link:
+                    email = email_link.get('href').replace('mailto:', '')
+            except Exception as e:
+                logging.debug(f"Email extraction failed: {e}")
             
             # Look for phone links
-            phone_link = element.select_one('a[href^="tel:"]')
-            if phone_link:
-                phone = phone_link.get('href').replace('tel:', '')
+            try:
+                phone_link = element.select_one('a[href^="tel:"]')
+                if phone_link:
+                    phone = phone_link.get('href').replace('tel:', '')
+            except Exception as e:
+                logging.debug(f"Phone extraction failed: {e}")
             
             if name:
                 return {
