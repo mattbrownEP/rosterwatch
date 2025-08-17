@@ -290,6 +290,106 @@ def open_records_dashboard():
     
     return render_template('open_records.html', changes=changes, summary=summary)
 
+@app.route('/admin/migrate-data', methods=['GET', 'POST'])
+def migrate_data():
+    """Admin page to migrate database data from development to production."""
+    if request.method == 'POST':
+        try:
+            # Get current count
+            current_count = db.session.query(MonitoredURL).count()
+            
+            # Clear existing data if requested
+            if request.form.get('clear_existing') == 'yes':
+                db.session.query(StaffChange).delete()
+                db.session.query(ScrapingLog).delete()
+                db.session.query(MonitoredURL).delete()
+                db.session.commit()
+                
+            # Migration data - all 49 URLs
+            migration_data = [
+                ('Alabama A&M Athletics', 'https://aamusports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Alabama State University', 'https://bamastatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Alcorn State', 'https://alcornsports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Appalachian State', 'https://appstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Arizona State', 'https://thesundevils.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Arkansas State University', 'https://astateredwolves.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Auburn', 'https://auburntigers.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Austin Peay', 'https://letsgopeay.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Arizona', 'https://arizonawildcats.com/sports/2007/8/1/207969432.aspx', 'Matt@ExtraPointsMB.com', None),
+                ('Ball State', 'https://ballstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Binghamton', 'https://binghamtonbearcats.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Boise State', 'https://broncosports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Bowling Green', 'https://bgsufalcons.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Cal Poly', 'https://gopoly.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Cal State Bakersfield', 'https://gorunners.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Fresno State', 'https://gobulldogs.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Cal State Fullerton', 'https://fullertontitans.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Cal State Northridge', 'https://gomatadors.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Sacramento State', 'https://hornetsports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Central Connecticut State University', 'https://ccsubluedevils.com/athletics/directory/index', 'Matt@ExtraPointsMB.com', None),
+                ('Central Michigan', 'https://cmuchippewas.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Chicago State', 'https://www.gocsucougars.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Clemson', 'https://clemsontigers.com/staff-directory/', 'Matt@ExtraPointsMB.com', None),
+                ('Cleveland State', 'https://csuvikings.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Coastal Carolina', 'https://goccusports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('College of Charleston', 'https://cofcsports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Colorado State', 'https://csurams.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Coppin State', 'https://coppinstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Colorado', 'https://cubuffs.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('ECU', 'https://ecupirates.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('ETSU', 'https://etsubucs.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('East Texas A&M University', 'https://lionathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Eastern Illinois', 'https://eiupanthers.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('EKU', 'https://ekusports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Eastern Michigan', 'https://emueagles.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Eastern Washington University', 'https://goeags.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('FAMU', 'https://famuathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('FAU', 'https://fausports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Florida Gulf Coast', 'https://fgcuathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Florida International', 'https://fiusports.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('George Mason', 'https://gomason.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Georgia Tech', 'https://ramblinwreck.com/staff-directory/', 'Matt@ExtraPointsMB.com', None),
+                ('Georgia Southern', 'https://gseagles.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Georgia State', 'https://georgiastatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', 'GA'),
+                ('Georgia', 'https://georgiadogs.com/staff-directory', 'Matt@ExtraPointsMB.com', 'GA'),
+                ('Grambling', 'https://gsutigers.com/staff-directory', 'Matt@ExtraPointsMB.com', 'TX'),
+                ('Idaho State', 'https://isubengals.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Illinois State', 'https://goredbirds.com/staff-directory?path=general', 'Matt@ExtraPointsMB.com', None),
+                ('Indiana State', 'https://gosycamores.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+                ('Indiana', 'https://iuhoosiers.com/staff-directory', 'Matt@ExtraPointsMB.com', None),
+            ]
+            
+            # Insert all URLs
+            for name, url, email, state in migration_data:
+                # Check if URL already exists
+                existing = db.session.query(MonitoredURL).filter_by(url=url).first()
+                if not existing:
+                    new_url = MonitoredURL(
+                        name=name,
+                        url=url,
+                        email=email,
+                        state=state,
+                        is_active=True
+                    )
+                    db.session.add(new_url)
+            
+            db.session.commit()
+            
+            # Get final count
+            final_count = db.session.query(MonitoredURL).count()
+            
+            flash(f'Migration successful! Updated from {current_count} to {final_count} URLs.', 'success')
+            return redirect(url_for('index'))
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Migration error: {e}")
+            flash(f'Migration failed: {str(e)}', 'error')
+    
+    # GET request - show migration page
+    current_count = db.session.query(MonitoredURL).count()
+    return render_template('admin_migrate.html', current_count=current_count)
+
 @app.route('/generate_request/<int:change_id>')
 def generate_request(change_id):
     """Generate an Open Records Request for a specific staff change."""
