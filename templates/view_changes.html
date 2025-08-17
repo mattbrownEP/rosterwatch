@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Changes for {{ monitored_url.name }} - Staff Directory Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-history me-2"></i>Change History</h1>
+                <p class="text-muted mb-0">
+                    <strong>{{ monitored_url.name }}</strong> • 
+                    <a href="{{ monitored_url.url }}" target="_blank" class="text-decoration-none">
+                        {{ monitored_url.url }}
+                        <i class="fas fa-external-link-alt ms-1"></i>
+                    </a>
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+                <a href="{{ url_for('check_now', url_id=monitored_url.id) }}" class="btn btn-primary">
+                    <i class="fas fa-sync me-2"></i>Check Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Site Info -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="fas fa-link fa-2x text-primary mb-2"></i>
+                            <h6>Status</h6>
+                            {% if monitored_url.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-play me-1"></i>Active
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-pause me-1"></i>Inactive
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                            <h6>Last Checked</h6>
+                            <small class="text-muted">{{ time_ago(monitored_url.last_checked) }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="fas fa-envelope fa-2x text-warning mb-2"></i>
+                            <h6>Notifications</h6>
+                            <small class="text-muted">{{ monitored_url.email }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="fas fa-calendar fa-2x text-success mb-2"></i>
+                            <h6>Added</h6>
+                            <small class="text-muted">{{ time_ago(monitored_url.created_at) }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Changes List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Detected Changes
+                    {% if changes.total > 0 %}
+                        <span class="badge bg-primary ms-2">{{ changes.total }}</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if changes.items %}
+                    <div class="timeline">
+                        {% for change in changes.items %}
+                        <div class="timeline-item mb-4">
+                            <div class="timeline-marker">
+                                {% if change.change_type == 'added' %}
+                                    <i class="fas fa-plus-circle text-success"></i>
+                                {% elif change.change_type == 'removed' %}
+                                    <i class="fas fa-minus-circle text-danger"></i>
+                                {% else %}
+                                    <i class="fas fa-edit text-warning"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-{{ 'success' if change.change_type == 'added' else 'danger' if change.change_type == 'removed' else 'warning' }} me-2">
+                                                {{ change.change_type.title() }}
+                                            </span>
+                                            {{ change.staff_name }}
+                                        </h6>
+                                        {% if change.staff_title %}
+                                            <p class="text-muted mb-1">
+                                                <i class="fas fa-user-tie me-1"></i>{{ change.staff_title }}
+                                            </p>
+                                        {% endif %}
+                                        <p class="mb-2">{{ change.change_description }}</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ format_datetime(change.detected_at) }}
+                                            {% if change.email_sent %}
+                                                <i class="fas fa-envelope text-success ms-2" title="Email notification sent"></i>
+                                                <span class="text-success">Email sent</span>
+                                            {% else %}
+                                                <i class="fas fa-envelope-open text-muted ms-2" title="Email not sent"></i>
+                                                <span class="text-muted">No email sent</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if changes.pages > 1 %}
+                    <nav aria-label="Changes pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if changes.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('view_changes', url_id=monitored_url.id, page=changes.prev_num) }}">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in changes.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != changes.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('view_changes', url_id=monitored_url.id, page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if changes.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('view_changes', url_id=monitored_url.id, page=changes.next_num) }}">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No changes detected yet</h5>
+                        <p class="text-muted">
+                            This site is being monitored, but no staff changes have been detected since monitoring began.
+                        </p>
+                        <p class="text-muted">
+                            <small>
+                                Changes will appear here when staff members are added, removed, or their titles change.
+                            </small>
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

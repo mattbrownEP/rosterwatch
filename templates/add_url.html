@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Add URL - Staff Directory Monitor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-plus me-2"></i>Add New Staff Directory URL
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Site Name
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="name" 
+                               name="name" 
+                               placeholder="e.g., University of Example Athletics"
+                               value="{{ request.form.get('name', '') }}"
+                               required>
+                        <div class="form-text">
+                            Give this site a descriptive name to identify it easily.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="url" class="form-label">
+                            <i class="fas fa-link me-1"></i>Staff Directory URL
+                        </label>
+                        <input type="url" 
+                               class="form-control" 
+                               id="url" 
+                               name="url" 
+                               placeholder="https://example.edu/athletics/staff"
+                               value="{{ request.form.get('url', '') }}"
+                               required>
+                        <div class="form-text">
+                            Full URL to the staff directory page you want to monitor.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Notification Email
+                        </label>
+                        <input type="email" 
+                               class="form-control" 
+                               id="email" 
+                               name="email" 
+                               placeholder="your-email@example.com"
+                               value="{{ request.form.get('email', '') }}"
+                               required>
+                        <div class="form-text">
+                            Email address where change notifications will be sent.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> When you add a URL, the system will immediately attempt to scrape it to verify it works. 
+                        The initial scraping will establish a baseline for future change detection.
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add URL
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-question-circle me-2"></i>Tips for Finding Staff Directory URLs
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-lightbulb me-1 text-warning"></i>Common URL Patterns</h6>
+                        <ul class="list-unstyled">
+                            <li><code>/athletics/staff</code></li>
+                            <li><code>/sports/directory</code></li>
+                            <li><code>/athletics/administration</code></li>
+                            <li><code>/athletics/coaches</code></li>
+                            <li><code>/staff-directory</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-search me-1 text-info"></i>What to Look For</h6>
+                        <ul class="list-unstyled">
+                            <li>• Pages with staff names and titles</li>
+                            <li>• Coach and administrator listings</li>
+                            <li>• Directory pages with contact info</li>
+                            <li>• Avoid PDF files or image galleries</li>
+                            <li>• Prefer HTML pages with structured data</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Make sure you have permission to monitor the website and that your monitoring 
+                    complies with the site's terms of service and robots.txt file.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-format URL input
+    const urlInput = document.getElementById('url');
+    urlInput.addEventListener('blur', function() {
+        let url = this.value.trim();
+        if (url && !url.match(/^https?:\/\//)) {
+            this.value = 'https://' + url;
+        }
+    });
+    
+    // Form validation feedback
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding URL...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}
