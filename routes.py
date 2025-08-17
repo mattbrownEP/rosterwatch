@@ -183,6 +183,86 @@ def test_email():
     
     return redirect(url_for('index'))
 
+@app.route('/changes')
+def changes_portal():
+    """Staff changes browsing portal."""
+    # Get filter parameters
+    days = request.args.get('days', 30, type=int)
+    change_type = request.args.get('type', '')
+    priority = request.args.get('priority', '')
+    institution = request.args.get('institution', '')
+    search = request.args.get('search', '')
+    
+    # Build query with filters
+    query = StaffChange.query
+    
+    # Date filter
+    if days and days > 0:
+        cutoff_date = datetime.utcnow() - timedelta(days=int(days))
+        query = query.filter(StaffChange.detected_at >= cutoff_date)
+    
+    # Change type filter
+    if change_type:
+        query = query.filter(StaffChange.change_type == change_type)
+    
+    # Priority filter
+    if priority:
+        query = query.filter(StaffChange.position_importance == priority)
+    
+    # Institution filter
+    if institution:
+        query = query.join(MonitoredURL).filter(MonitoredURL.name.ilike(f'%{institution}%'))
+    
+    # Search filter
+    if search:
+        search_term = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                StaffChange.staff_name.ilike(search_term),
+                StaffChange.staff_title.ilike(search_term),
+                StaffChange.change_description.ilike(search_term)
+            )
+        )
+    
+    # Get results
+    changes = query.order_by(StaffChange.detected_at.desc()).limit(100).all()
+    
+    # Classify changes that haven't been classified yet
+    open_records_service = OpenRecordsService()
+    for change in changes:
+        if not change.position_importance:
+            classification = open_records_service.classify_staff_change(
+                change.staff_name, change.staff_title, change.change_type
+            )
+            change.position_importance = classification['position_importance']
+            change.likely_contract_value = classification['contract_likelihood']
+    
+    db.session.commit()
+    
+    # Get summary statistics for all changes (not just filtered)
+    all_changes = StaffChange.query.all()
+    summary = open_records_service.get_dashboard_summary([{
+        'position_importance': c.position_importance,
+        'open_records_filed': c.open_records_filed,
+        'open_records_status': c.open_records_status
+    } for c in all_changes])
+    
+    # Get unique institutions for filter dropdown
+    institutions = db.session.query(MonitoredURL.name).distinct().order_by(MonitoredURL.name).all()
+    institutions = [inst[0] for inst in institutions]
+    
+    return render_template('changes_portal.html', 
+                         changes=changes, 
+                         summary=summary,
+                         institutions=institutions,
+                         filters={
+                             'days': days,
+                             'type': change_type,
+                             'priority': priority,
+                             'institution': institution,
+                             'search': search
+                         })
+
 @app.route('/open_records')
 def open_records_dashboard():
     """Open Records Request dashboard."""

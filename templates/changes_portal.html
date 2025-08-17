@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Staff Changes - Staff Directory Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-search me-2"></i>Browse Staff Changes</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.total_changes }}</h4>
+                        <p class="card-text">Total Changes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.high_priority_changes }}</h4>
+                        <p class="card-text">High Priority</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ changes|length }}</h4>
+                        <p class="card-text">Showing Results</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-filter fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.requests_filed }}</h4>
+                        <p class="card-text">Requests Filed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-paper-plane fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-filter me-2"></i>Filter Changes
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-2">
+                        <label for="days" class="form-label">Time Period</label>
+                        <select class="form-control" name="days" id="days">
+                            <option value="7" {% if filters.days == 7 %}selected{% endif %}>Last 7 days</option>
+                            <option value="30" {% if filters.days == 30 %}selected{% endif %}>Last 30 days</option>
+                            <option value="90" {% if filters.days == 90 %}selected{% endif %}>Last 90 days</option>
+                            <option value="365" {% if filters.days == 365 %}selected{% endif %}>Last year</option>
+                            <option value="0" {% if filters.days == 0 %}selected{% endif %}>All time</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="type" class="form-label">Change Type</label>
+                        <select class="form-control" name="type" id="type">
+                            <option value="">All Changes</option>
+                            <option value="added" {% if filters.type == 'added' %}selected{% endif %}>Added</option>
+                            <option value="removed" {% if filters.type == 'removed' %}selected{% endif %}>Removed</option>
+                            <option value="modified" {% if filters.type == 'modified' %}selected{% endif %}>Modified</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-control" name="priority" id="priority">
+                            <option value="">All Priorities</option>
+                            <option value="high" {% if filters.priority == 'high' %}selected{% endif %}>High Priority</option>
+                            <option value="medium" {% if filters.priority == 'medium' %}selected{% endif %}>Medium Priority</option>
+                            <option value="standard" {% if filters.priority == 'standard' %}selected{% endif %}>Standard Priority</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="institution" class="form-label">Institution</label>
+                        <select class="form-control" name="institution" id="institution">
+                            <option value="">All Institutions</option>
+                            {% for inst in institutions %}
+                                <option value="{{ inst }}" {% if filters.institution == inst %}selected{% endif %}>
+                                    {{ inst }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               id="search"
+                               placeholder="Name, title, or description"
+                               value="{{ filters.search }}">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <div class="mt-2">
+                    <a href="{{ url_for('changes_portal') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-undo me-1"></i>Clear Filters
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Changes List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Staff Changes
+                    <small class="text-muted">(Showing {{ changes|length }} results)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if changes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Staff Member</th>
+                                    <th>Institution</th>
+                                    <th>Change Type</th>
+                                    <th>Priority</th>
+                                    <th>Contract Value</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for change in changes %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <small class="text-muted">{{ format_datetime(change.detected_at) }}</small>
+                                            <br><small class="text-muted">{{ time_ago(change.detected_at) }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ change.staff_name }}</strong>
+                                            {% if change.staff_title %}
+                                                <br><small class="text-muted">{{ change.staff_title }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ change.monitored_url.name }}</strong>
+                                            {% if change.monitored_url.state %}
+                                                <br><small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>{{ get_state_name(change.monitored_url.state) }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if change.change_type == 'added' else 'danger' if change.change_type == 'removed' else 'warning' }}">
+                                            <i class="fas fa-{{ 'plus' if change.change_type == 'added' else 'minus' if change.change_type == 'removed' else 'edit' }} me-1"></i>
+                                            {{ change.change_type.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ get_priority_badge_class(change.position_importance) }}">
+                                            {{ (change.position_importance or 'standard').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if change.likely_contract_value == 'high' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-dollar-sign me-1"></i>High Value
+                                            </span>
+                                        {% elif change.likely_contract_value == 'medium' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-dollar-sign me-1"></i>Medium Value
+                                            </span>
+                                        {% elif change.likely_contract_value == 'low' %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-dollar-sign me-1"></i>Low Value
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-dark">
+                                                <i class="fas fa-minus me-1"></i>None
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('generate_request', change_id=change.id) }}" 
+                                               class="btn btn-outline-primary" title="Generate Request">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                            {% if change.position_importance in ['high', 'medium'] and not change.open_records_filed %}
+                                                <a href="{{ url_for('mark_filed', change_id=change.id) }}" 
+                                                   class="btn btn-outline-success" title="Mark as Filed">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% if change.change_description %}
+                                <tr class="table-light">
+                                    <td colspan="7">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            {{ change.change_description }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No changes found</h5>
+                        <p class="text-muted">Try adjusting your filters or check back later for new changes.</p>
+                        <a href="{{ url_for('changes_portal') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-undo me-2"></i>Clear All Filters
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Filter Buttons -->
+{% if changes %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Filters
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('changes_portal', priority='high') }}" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>High Priority Only
+                    </a>
+                    <a href="{{ url_for('changes_portal', type='added') }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-plus me-1"></i>New Hires
+                    </a>
+                    <a href="{{ url_for('changes_portal', type='removed') }}" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-minus me-1"></i>Departures
+                    </a>
+                    <a href="{{ url_for('changes_portal', days=7) }}" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-clock me-1"></i>Last Week
+                    </a>
+                    <a href="{{ url_for('changes_portal', search='coach') }}" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-whistle me-1"></i>Coaches Only
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit form when filters change (except search)
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const searchInput = document.getElementById('search');
+    const otherInputs = form.querySelectorAll('select');
+    
+    otherInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+    
+    // Submit search on Enter
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}
