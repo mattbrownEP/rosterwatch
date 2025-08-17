@@ -4,6 +4,8 @@
 
 This is a Flask-based web application that monitors staff directory pages for changes and sends email notifications when modifications are detected. The system automatically scrapes specified URLs at regular intervals, detects changes in staff information (additions, removals, modifications), and alerts users via email. It features a web dashboard for managing monitored URLs, viewing change history, and testing email configurations.
 
+**Status**: Application is fully operational and successfully monitoring college athletic staff directories. Currently monitoring Alabama A&M Athletics staff directory with 167 detected staff members.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
