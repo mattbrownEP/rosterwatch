@@ -305,7 +305,8 @@ def migrate_data():
                 db.session.query(MonitoredURL).delete()
                 db.session.commit()
                 
-            # Migration data - all 80 URLs (current as of August 17, 2025)
+            # Get migration data from current database (all URLs currently active)
+            existing_urls = db.session.query(MonitoredURL).all()
             migration_data = [
                 ('Alabama A&M Athletics', 'https://aamusports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
                 ('Alabama State University', 'https://bamastatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
