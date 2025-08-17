@@ -8,6 +8,8 @@ from models import MonitoredURL, StaffChange, ScrapingLog
 from scraper import StaffDirectoryScraper
 from scheduler_service import trigger_immediate_check
 from email_service import EmailService
+from open_records_service import OpenRecordsService
+from state_info import classify_position_importance, estimate_contract_likelihood
 
 logger = logging.getLogger(__name__)
 
@@ -65,12 +67,18 @@ def add_url():
         if len(staff_list) == 0:
             flash('No staff members found on this page. Please check the URL or try a different page.', 'warning')
         
+        # Get Open Records service for state detection
+        open_records_service = OpenRecordsService()
+        detected_state = open_records_service.get_institution_state_from_url(url)
+        
         # Create new monitored URL
         monitored_url = MonitoredURL(
             name=name,
             url=url,
             email=email,
-            last_content_hash=content_hash
+            last_content_hash=content_hash,
+            state=detected_state,
+            institution_type='public'  # Default assumption for college athletics
         )
         
         try:
@@ -175,6 +183,113 @@ def test_email():
     
     return redirect(url_for('index'))
 
+@app.route('/open_records')
+def open_records_dashboard():
+    """Open Records Request dashboard."""
+    # Get all staff changes with classification
+    changes = StaffChange.query.order_by(StaffChange.detected_at.desc()).limit(50).all()
+    
+    # Classify changes that haven't been classified yet
+    open_records_service = OpenRecordsService()
+    for change in changes:
+        if not change.position_importance:
+            classification = open_records_service.classify_staff_change(
+                change.staff_name, change.staff_title, change.change_type
+            )
+            change.position_importance = classification['position_importance']
+            change.likely_contract_value = classification['contract_likelihood']
+    
+    db.session.commit()
+    
+    # Get summary statistics
+    summary = open_records_service.get_dashboard_summary([{
+        'position_importance': c.position_importance,
+        'open_records_filed': c.open_records_filed,
+        'open_records_status': c.open_records_status
+    } for c in changes])
+    
+    return render_template('open_records.html', changes=changes, summary=summary)
+
+@app.route('/generate_request/<int:change_id>')
+def generate_request(change_id):
+    """Generate an Open Records Request for a specific staff change."""
+    change = StaffChange.query.get_or_404(change_id)
+    monitored_url = change.monitored_url
+    
+    open_records_service = OpenRecordsService()
+    
+    # Prepare change data
+    change_data = {
+        'staff_name': change.staff_name,
+        'staff_title': change.staff_title,
+        'change_type': change.change_type,
+        'detected_at': change.detected_at,
+        'position_importance': change.position_importance
+    }
+    
+    # Prepare institution data
+    institution_data = {
+        'name': monitored_url.name,
+        'state': monitored_url.state,
+        'open_records_contact': monitored_url.open_records_contact
+    }
+    
+    # Generate the request letter
+    request_letter = open_records_service.generate_request_letter(change_data, institution_data)
+    
+    return render_template('request_letter.html', 
+                         change=change,
+                         monitored_url=monitored_url,
+                         request_letter=request_letter)
+
+@app.route('/mark_filed/<int:change_id>')
+def mark_filed(change_id):
+    """Mark an Open Records Request as filed."""
+    change = StaffChange.query.get_or_404(change_id)
+    
+    change.open_records_filed = True
+    change.open_records_date = datetime.utcnow()
+    change.open_records_status = 'pending'
+    
+    try:
+        db.session.commit()
+        flash(f'Marked Open Records Request as filed for {change.staff_name}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error marking request as filed: {str(e)}")
+        flash('Error updating request status.', 'error')
+    
+    return redirect(url_for('open_records_dashboard'))
+
+@app.route('/update_institution/<int:url_id>', methods=['GET', 'POST'])
+def update_institution(url_id):
+    """Update institution information for better Open Records requests."""
+    monitored_url = MonitoredURL.query.get_or_404(url_id)
+    
+    if request.method == 'POST':
+        monitored_url.state = request.form.get('state', '').upper()
+        monitored_url.institution_type = request.form.get('institution_type', 'public')
+        monitored_url.conference = request.form.get('conference', '')
+        monitored_url.open_records_contact = request.form.get('open_records_contact', '')
+        monitored_url.open_records_email = request.form.get('open_records_email', '')
+        monitored_url.response_time_days = int(request.form.get('response_time_days', 10))
+        
+        try:
+            db.session.commit()
+            flash(f'Updated institution information for {monitored_url.name}.', 'success')
+            return redirect(url_for('index'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error updating institution: {str(e)}")
+            flash('Error updating institution information.', 'error')
+    
+    # Get state info for form
+    from state_info import STATE_INFO
+    
+    return render_template('update_institution.html', 
+                         monitored_url=monitored_url,
+                         state_info=STATE_INFO)
+
 @app.context_processor
 def utility_processor():
     """Add utility functions to Jinja2 templates."""
@@ -202,4 +317,25 @@ def utility_processor():
             days = diff.days
             return f'{days} day{"s" if days != 1 else ""} ago'
     
-    return dict(format_datetime=format_datetime, time_ago=time_ago)
+    def get_state_name(state_code):
+        """Get full state name from abbreviation."""
+        from state_info import STATE_INFO
+        if state_code and state_code in STATE_INFO:
+            return STATE_INFO[state_code]['name']
+        return 'Unknown'
+    
+    def get_priority_badge_class(importance):
+        """Get Bootstrap badge class for priority level."""
+        if importance == 'high':
+            return 'bg-danger'
+        elif importance == 'medium':
+            return 'bg-warning'
+        else:
+            return 'bg-secondary'
+    
+    return dict(
+        format_datetime=format_datetime, 
+        time_ago=time_ago,
+        get_state_name=get_state_name,
+        get_priority_badge_class=get_priority_badge_class
+    )

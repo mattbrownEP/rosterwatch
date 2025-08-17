@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Update Institution - {{ monitored_url.name }} - Staff Directory Monitor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-edit me-2"></i>Update Institution Information
+                </h4>
+                <small class="text-muted">{{ monitored_url.name }}</small>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="state" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>State
+                                </label>
+                                <select class="form-control" id="state" name="state">
+                                    <option value="">Select State</option>
+                                    {% for code, info in state_info.items() %}
+                                        <option value="{{ code }}" {% if monitored_url.state == code %}selected{% endif %}>
+                                            {{ info.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    State determines applicable Open Records laws and procedures.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="institution_type" class="form-label">
+                                    <i class="fas fa-university me-1"></i>Institution Type
+                                </label>
+                                <select class="form-control" id="institution_type" name="institution_type">
+                                    <option value="public" {% if monitored_url.institution_type == 'public' %}selected{% endif %}>Public</option>
+                                    <option value="private" {% if monitored_url.institution_type == 'private' %}selected{% endif %}>Private</option>
+                                </select>
+                                <div class="form-text">
+                                    Most college athletics are subject to Open Records laws.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="conference" class="form-label">
+                            <i class="fas fa-trophy me-1"></i>Athletic Conference
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="conference" 
+                               name="conference" 
+                               placeholder="e.g., SEC, Big Ten, ACC"
+                               value="{{ monitored_url.conference or '' }}">
+                        <div class="form-text">
+                            Conference affiliation for organizational purposes.
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="open_records_contact" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Open Records Contact
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="open_records_contact" 
+                                       name="open_records_contact" 
+                                       placeholder="e.g., Records Custodian, FOIA Officer"
+                                       value="{{ monitored_url.open_records_contact or '' }}">
+                                <div class="form-text">
+                                    Title or name of the Open Records contact person.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="open_records_email" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Open Records Email
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="open_records_email" 
+                                       name="open_records_email" 
+                                       placeholder="records@university.edu"
+                                       value="{{ monitored_url.open_records_email or '' }}">
+                                <div class="form-text">
+                                    Direct email for sending Open Records requests.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="response_time_days" class="form-label">
+                            <i class="fas fa-clock me-1"></i>Typical Response Time (Days)
+                        </label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="response_time_days" 
+                               name="response_time_days" 
+                               min="1" 
+                               max="30"
+                               value="{{ monitored_url.response_time_days or 10 }}">
+                        <div class="form-text">
+                            Historical response time for this institution (1-30 days).
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Why this information helps:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>State information ensures proper legal citations in requests</li>
+                            <li>Contact details enable direct, efficient request submission</li>
+                            <li>Response time tracking helps plan follow-up timing</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Information
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- State Information Display -->
+        <div class="card mt-4" id="stateInfoCard" style="display: none;">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-gavel me-2"></i><span id="stateName"></span> Open Records Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Applicable Law:</strong><br>
+                        <small id="lawName" class="text-muted"></small>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Response Timeframe:</strong><br>
+                        <small id="responseDays" class="text-muted"></small>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Fee Structure:</strong><br>
+                        <small id="feeStructure" class="text-muted"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const stateInfo = {{ state_info | tojson }};
+
+document.getElementById('state').addEventListener('change', function() {
+    const selectedState = this.value;
+    const stateInfoCard = document.getElementById('stateInfoCard');
+    
+    if (selectedState && stateInfo[selectedState]) {
+        const info = stateInfo[selectedState];
+        
+        document.getElementById('stateName').textContent = info.name;
+        document.getElementById('lawName').textContent = info.law_name;
+        document.getElementById('responseDays').textContent = info.response_days + ' days';
+        document.getElementById('feeStructure').textContent = info.fee_structure;
+        
+        stateInfoCard.style.display = 'block';
+    } else {
+        stateInfoCard.style.display = 'none';
+    }
+});
+
+// Trigger change event on page load if state is already selected
+document.addEventListener('DOMContentLoaded', function() {
+    const stateSelect = document.getElementById('state');
+    if (stateSelect.value) {
+        stateSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

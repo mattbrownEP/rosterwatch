@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Open Records Dashboard - Staff Directory Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-file-alt me-2"></i>Open Records Dashboard</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.total_changes }}</h4>
+                        <p class="card-text">Total Changes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.high_priority_changes }}</h4>
+                        <p class="card-text">High Priority</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.requests_filed }}</h4>
+                        <p class="card-text">Requests Filed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-paper-plane fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ summary.pending_requests }}</h4>
+                        <p class="card-text">Pending Responses</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Changes List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Recent Staff Changes
+                    <small class="text-muted">(Showing last 50 changes)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if changes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Staff Member</th>
+                                    <th>Institution</th>
+                                    <th>Change Type</th>
+                                    <th>Priority</th>
+                                    <th>Detected</th>
+                                    <th>Request Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for change in changes %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ change.staff_name }}</strong>
+                                            {% if change.staff_title %}
+                                                <br><small class="text-muted">{{ change.staff_title }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ change.monitored_url.name }}</strong>
+                                            {% if change.monitored_url.state %}
+                                                <br><small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>{{ get_state_name(change.monitored_url.state) }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if change.change_type == 'added' else 'danger' if change.change_type == 'removed' else 'warning' }}">
+                                            {{ change.change_type.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ get_priority_badge_class(change.position_importance) }}">
+                                            {{ (change.position_importance or 'standard').title() }}
+                                        </span>
+                                        {% if change.likely_contract_value == 'high' %}
+                                            <br><small class="text-success">
+                                                <i class="fas fa-dollar-sign me-1"></i>Likely Contract
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ time_ago(change.detected_at) }}</small>
+                                    </td>
+                                    <td>
+                                        {% if change.open_records_filed %}
+                                            {% if change.open_records_status == 'pending' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>Pending
+                                                </span>
+                                            {% elif change.open_records_status == 'received' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Received
+                                                </span>
+                                            {% elif change.open_records_status == 'denied' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Denied
+                                                </span>
+                                            {% endif %}
+                                            <br><small class="text-muted">Filed: {{ format_datetime(change.open_records_date) }}</small>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-minus me-1"></i>Not Filed
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if not change.open_records_filed %}
+                                                <a href="{{ url_for('generate_request', change_id=change.id) }}" 
+                                                   class="btn btn-outline-primary" title="Generate Request">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </a>
+                                                {% if change.position_importance in ['high', 'medium'] %}
+                                                    <a href="{{ url_for('mark_filed', change_id=change.id) }}" 
+                                                       class="btn btn-outline-success" title="Mark as Filed">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </a>
+                                                {% endif %}
+                                            {% else %}
+                                                <a href="{{ url_for('generate_request', change_id=change.id) }}" 
+                                                   class="btn btn-outline-info" title="View Request">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No staff changes detected yet</h5>
+                        <p class="text-muted">Staff changes will appear here as they are detected from monitored URLs.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if changes %}
+<!-- Priority Legend -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Priority Classification Guide
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <span class="badge bg-danger me-2">High Priority</span>
+                        <small>Head coaches, coordinators, athletic directors - likely to have significant contracts</small>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="badge bg-warning me-2">Medium Priority</span>
+                        <small>Managers, specialists, trainers - may have contracts worth reviewing</small>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="badge bg-secondary me-2">Standard Priority</span>
+                        <small>Support staff, assistants - lower likelihood of significant contracts</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

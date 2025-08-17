@@ -11,6 +11,14 @@ class MonitoredURL(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Institution information
+    state = db.Column(db.String(2))  # State abbreviation
+    institution_type = db.Column(db.String(20), default='public')  # public/private
+    conference = db.Column(db.String(100))
+    open_records_contact = db.Column(db.String(200))
+    open_records_email = db.Column(db.String(120))
+    response_time_days = db.Column(db.Integer, default=10)  # Typical response time
+    
     # Relationship to changes
     changes = db.relationship('StaffChange', backref='monitored_url', lazy=True, cascade='all, delete-orphan')
 
@@ -23,6 +31,13 @@ class StaffChange(db.Model):
     change_description = db.Column(db.Text)
     detected_at = db.Column(db.DateTime, default=datetime.utcnow)
     email_sent = db.Column(db.Boolean, default=False)
+    
+    # Enhanced tracking for Open Records requests
+    position_importance = db.Column(db.String(20), default='standard')  # 'high', 'medium', 'standard'
+    likely_contract_value = db.Column(db.String(20))  # 'high', 'medium', 'low', 'none'
+    open_records_filed = db.Column(db.Boolean, default=False)
+    open_records_date = db.Column(db.DateTime)
+    open_records_status = db.Column(db.String(50), default='not_filed')  # 'not_filed', 'pending', 'received', 'denied'
 
 class ScrapingLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -8,6 +8,7 @@ from app import app, db
 from models import MonitoredURL, StaffChange, ScrapingLog
 from scraper import StaffDirectoryScraper
 from email_service import EmailService
+from open_records_service import OpenRecordsService
 
 logger = logging.getLogger(__name__)
 
@@ -108,14 +109,24 @@ def monitor_single_url(monitored_url):
             changes = scraper.compare_staff_lists(previous_staff_list, staff_list)
             
             if changes:
+                # Classify changes for Open Records priority
+                open_records_service = OpenRecordsService()
+                
                 # Save changes to database
                 for change in changes:
+                    # Classify the change
+                    classification = open_records_service.classify_staff_change(
+                        change['staff_name'], change['staff_title'], change['change_type']
+                    )
+                    
                     staff_change = StaffChange(
                         monitored_url_id=monitored_url.id,
                         change_type=change['change_type'],
                         staff_name=change['staff_name'],
                         staff_title=change['staff_title'],
-                        change_description=change['change_description']
+                        change_description=change['change_description'],
+                        position_importance=classification['position_importance'],
+                        likely_contract_value=classification['contract_likelihood']
                     )
                     db.session.add(staff_change)
                 

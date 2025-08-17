@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Open Records Request - {{ change.staff_name }} - Staff Directory Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-file-alt me-2"></i>Open Records Request</h1>
+                <p class="text-muted mb-0">
+                    <strong>{{ change.staff_name }}</strong> - {{ change.staff_title }}
+                    <br>{{ monitored_url.name }}
+                    {% if monitored_url.state %}
+                        • {{ get_state_name(monitored_url.state) }}
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('open_records_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Open Records
+                </a>
+                {% if not change.open_records_filed %}
+                    <a href="{{ url_for('mark_filed', change_id=change.id) }}" class="btn btn-success">
+                        <i class="fas fa-paper-plane me-2"></i>Mark as Filed
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Change Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Change Type:</strong><br>
+                        <span class="badge bg-{{ 'success' if change.change_type == 'added' else 'danger' if change.change_type == 'removed' else 'warning' }}">
+                            {{ change.change_type.title() }}
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Priority Level:</strong><br>
+                        <span class="badge {{ get_priority_badge_class(change.position_importance) }}">
+                            {{ (change.position_importance or 'standard').title() }}
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Detected:</strong><br>
+                        <small>{{ format_datetime(change.detected_at) }}</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Request Status:</strong><br>
+                        {% if change.open_records_filed %}
+                            <span class="badge bg-success">Filed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Filed</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if change.change_description %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong>Description:</strong><br>
+                            <small class="text-muted">{{ change.change_description }}</small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- State Information -->
+{% if monitored_url.state %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-map-marker-alt me-2"></i>{{ get_state_name(monitored_url.state) }} Open Records Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Applicable Law:</strong><br>
+                        <small>{{ state_info[monitored_url.state]['law_name'] if monitored_url.state in state_info else 'State Open Records Law' }}</small>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Response Timeframe:</strong><br>
+                        <small>{{ state_info[monitored_url.state]['response_days'] if monitored_url.state in state_info else 'Varies' }} days</small>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Typical Fees:</strong><br>
+                        <small>{{ state_info[monitored_url.state]['fee_structure'] if monitored_url.state in state_info else 'Varies by institution' }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Request Letter -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-envelope me-2"></i>Generated Request Letter
+                </h5>
+                <button class="btn btn-outline-primary btn-sm" onclick="copyRequestLetter()">
+                    <i class="fas fa-copy me-1"></i>Copy Text
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Instructions:</strong> Copy the text below and paste it into an email to send to the institution's Open Records office.
+                    {% if monitored_url.open_records_email %}
+                        Send to: <strong>{{ monitored_url.open_records_email }}</strong>
+                    {% endif %}
+                </div>
+                
+                <div class="bg-light p-3 border rounded" style="font-family: monospace; white-space: pre-line;" id="requestLetter">{{ request_letter }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Information Update -->
+{% if not monitored_url.open_records_email or not monitored_url.state %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Missing Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">To improve request efficiency, consider updating the institution information:</p>
+                <ul class="mb-3">
+                    {% if not monitored_url.state %}
+                        <li>State information for proper legal citations</li>
+                    {% endif %}
+                    {% if not monitored_url.open_records_email %}
+                        <li>Open Records contact email for direct sending</li>
+                    {% endif %}
+                </ul>
+                <a href="{{ url_for('update_institution', url_id=monitored_url.id) }}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Update Institution Info
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyRequestLetter() {
+    const requestLetter = document.getElementById('requestLetter');
+    const text = requestLetter.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+        alert('Failed to copy text. Please select and copy manually.');
+    });
+}
+</script>
+{% endblock %}
