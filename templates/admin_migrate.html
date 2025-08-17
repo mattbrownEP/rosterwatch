@@ -25,7 +25,7 @@
             <div class="card-body">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>What this does:</strong> This migration will add all 110 monitored URLs from your development environment to this production database.
+                    <strong>What this does:</strong> This migration will add all {{ total_available }} monitored URLs from your development environment to this production database.
                 </div>
                 
                 <div class="row mb-4">
@@ -40,7 +40,7 @@
                     <div class="col-md-6">
                         <div class="card bg-light">
                             <div class="card-body text-center">
-                                <h4 class="text-success">110</h4>
+                                <h4 class="text-success">{{ total_available }}</h4>
                                 <p class="card-text">URLs After Migration</p>
                             </div>
                         </div>

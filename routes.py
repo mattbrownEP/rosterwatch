@@ -419,7 +419,10 @@ def migrate_data():
     
     # GET request - show migration page
     current_count = db.session.query(MonitoredURL).count()
-    return render_template('admin_migrate.html', current_count=current_count)
+    total_available = 110  # Total URLs available for migration
+    return render_template('admin_migrate.html', 
+                         current_count=current_count,
+                         total_available=total_available)
 
 @app.route('/generate_request/<int:change_id>')
 def generate_request(change_id):
