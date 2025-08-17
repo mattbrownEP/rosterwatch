@@ -30,3 +30,6 @@ class ScrapingLog(db.Model):
     status = db.Column(db.String(50), nullable=False)  # 'success', 'error'
     message = db.Column(db.Text)
     scraped_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to monitored URL
+    monitored_url = db.relationship('MonitoredURL', backref='scraping_logs')
