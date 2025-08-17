@@ -72,10 +72,27 @@ class StaffDirectoryScraper:
             elements = soup.select(selector)
             if elements:
                 logger.debug(f"Found {len(elements)} elements with selector: {selector}")
+                
+                # Limit processing to prevent timeouts on large sites
+                max_elements = 300
+                if len(elements) > max_elements:
+                    logger.info(f"Limiting processing to {max_elements} elements (found {len(elements)})")
+                    elements = elements[:max_elements]
+                
                 for element in elements:
                     staff_info = self._parse_staff_element(element, base_url)
                     if staff_info and staff_info not in staff_list:
                         staff_list.append(staff_info)
+                        
+                    # Break early if we have enough staff members
+                    if len(staff_list) > 150:
+                        logger.info(f"Found sufficient staff members ({len(staff_list)}), stopping extraction")
+                        break
+                        
+                # If we found staff with this selector, don't try other selectors
+                if staff_list:
+                    logger.info(f"Successfully found {len(staff_list)} staff members with selector: {selector}")
+                    break
         
         # If no specific selectors work, try to find patterns in the HTML
         if not staff_list:
