@@ -4,7 +4,7 @@
 
 This is a Flask-based web application that monitors staff directory pages for changes and sends email notifications when modifications are detected. The system automatically scrapes specified URLs at regular intervals, detects changes in staff information (additions, removals, modifications), and alerts users via email. It features a web dashboard for managing monitored URLs, viewing change history, and testing email configurations.
 
-**Status**: Application is fully operational and successfully monitoring college athletic staff directories. Currently monitoring 225 URLs with approximately 85-90% working correctly. Enhanced with state-specific Open Records Request workflow including position importance classification, automated request letter generation, and state-specific legal templates. Ready for production deployment with comprehensive college coverage.
+**Status**: Development environment fully operational with 225 institutions loaded and working perfectly. Production deployment at https://workspace-mattbrownep.replit.app experiencing persistent 404 errors despite multiple deployment attempts and fixes. Local server confirmed working with complete 225-institution dataset. Critical for user's job requirements.
 
 ## User Preferences
 
@@ -73,3 +73,14 @@ Primary use case: Filing Open Records Requests for college athletic staff contra
 - **Environment variables**: Session secrets, database URLs, and SMTP configuration
 - **File system**: Local storage for SQLite database in development mode
 - **Network access**: Outbound HTTP/HTTPS for scraping target websites and sending emails
+
+## Current Issues (Aug 18, 2025)
+- **Development**: ✅ Working perfectly with 225 institutions
+- **Production deployment**: ❌ https://workspace-mattbrownep.replit.app shows 404 errors
+- **Alternative production URL**: https://roster-watch-mattbrownep.replit.app (has 80 URLs, needs migration)
+- **User requirement**: Urgent need for colleagues to access complete 225-institution database
+
+## Tomorrow's Options
+1. **Fix current deployment**: Debug why workspace-mattbrownep.replit.app fails despite working locally
+2. **Migrate existing production**: Update roster-watch-mattbrownep.replit.app from 80 to 225 URLs
+3. **Alternative deployment**: Try different deployment approach or platform
