@@ -305,92 +305,11 @@ def migrate_data():
                 db.session.query(MonitoredURL).delete()
                 db.session.commit()
                 
-            # Get migration data from current database (all URLs currently active)
-            existing_urls = db.session.query(MonitoredURL).all()
-            migration_data = [
-                ('Alabama A&M Athletics', 'https://aamusports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Alabama State University', 'https://bamastatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Alcorn State', 'https://alcornsports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Appalachian State', 'https://appstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Arizona', 'https://arizonawildcats.com/sports/2007/8/1/207969432.aspx', 'Matt@ExtraPointsMB.com', ''),
-                ('Arizona State', 'https://thesundevils.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Arkansas State University', 'https://astateredwolves.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Auburn', 'https://auburntigers.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Austin Peay', 'https://letsgopeay.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Ball State', 'https://ballstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Binghamton', 'https://binghamtonbearcats.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Boise State', 'https://broncosports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Bowling Green', 'https://bgsufalcons.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Cal Poly', 'https://gopoly.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Cal State Bakersfield', 'https://gorunners.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Cal State Fullerton', 'https://fullertontitans.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Cal State Northridge', 'https://gomatadors.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Central Connecticut State University', 'https://ccsubluedevils.com/athletics/directory/index', 'Matt@ExtraPointsMB.com', ''),
-                ('Central Michigan', 'https://cmuchippewas.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Chicago State', 'https://www.gocsucougars.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Clemson', 'https://clemsontigers.com/staff-directory/', 'Matt@ExtraPointsMB.com', ''),
-                ('Cleveland State', 'https://csuvikings.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Coastal Carolina', 'https://goccusports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('College of Charleston', 'https://cofcsports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Colorado', 'https://cubuffs.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Colorado State', 'https://csurams.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Coppin State', 'https://coppinstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('ECU', 'https://ecupirates.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('EKU', 'https://ekusports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('ETSU', 'https://etsubucs.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('East Texas A&M University', 'https://lionathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Eastern Illinois', 'https://eiupanthers.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Eastern Michigan', 'https://emueagles.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Eastern Washington University', 'https://goeags.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('FAMU', 'https://famuathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('FAU', 'https://fausports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Florida Gulf Coast', 'https://fgcuathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Florida International', 'https://fiusports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Fresno State', 'https://gobulldogs.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('George Mason', 'https://gomason.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Georgia', 'https://georgiadogs.com/staff-directory', 'Matt@ExtraPointsMB.com', 'GA'),
-                ('Georgia Southern', 'https://gseagles.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Georgia State', 'https://georgiastatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', 'GA'),
-                ('Georgia Tech', 'https://ramblinwreck.com/staff-directory/', 'Matt@ExtraPointsMB.com', ''),
-                ('Grambling', 'https://gsutigers.com/staff-directory', 'Matt@ExtraPointsMB.com', 'TX'),
-                ('IU Indy', 'https://iuindyjags.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Idaho State', 'https://isubengals.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Illinois State', 'https://goredbirds.com/staff-directory?path=general', 'Matt@ExtraPointsMB.com', ''),
-                ('Indiana', 'https://iuhoosiers.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Indiana State', 'https://gosycamores.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Iowa State', 'https://cyclones.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Jackson State', 'https://gojsutigers.com/staff-directory', 'Matt@ExtraPointsMB.com', 'TX'),
-                ('Jacksonville State', 'https://jaxstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('James Madison', 'https://jmusports.com/staff-directory', 'Matt@ExtraPointsMB.com', 'VA'),
-                ('Kansas', 'https://kuathletics.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Kansas State', 'https://www.kstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Kennesaw State Athletics', 'https://ksuowls.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Kent State', 'https://kentstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('LSU', 'https://lsusports.net/staff-directory/', 'Matt@ExtraPointsMB.com', 'LA'),
-                ('Lamar', 'https://lamarcardinals.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Long Beach State', 'https://longbeachstate.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Longwood', 'https://longwoodlancers.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Louisiana Tech', 'https://latechsports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('MTSU', 'https://goblueraiders.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Marshall', 'https://herdzone.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('McNeese State', 'https://mcneesesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Miami OH', 'https://miamiredhawks.com/staff-directory', 'Matt@ExtraPointsMB.com', 'FL'),
-                ('Michigan State', 'https://msuspartans.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Mississippi State', 'https://hailstate.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Mississippi State Valley State', 'https://mvsusports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Missouri State', 'https://missouristatebears.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Montana State University', 'https://msubobcats.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Morehead State University', 'https://msueagles.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Morgan State', 'https://morganstatebears.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Murray State', 'https://goracers.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('NJIT', 'https://njithighlanders.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('New Mexico State', 'https://nmstatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Nicholls State', 'https://geauxcolonels.com/staff-directory?path=gen', 'Matt@ExtraPointsMB.com', ''),
-                ('Norfolk State', 'https://nsuspartans.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-                ('Sacramento State', 'https://hornetsports.com/staff-directory', 'Matt@ExtraPointsMB.com', ''),
-            ]
+            # Use the complete 225-institution dataset from our export module
+            from complete_database_export import get_complete_migration_data
+            migration_data = get_complete_migration_data()
             
-            # Insert all URLs
+            # Insert all URLs from our complete dataset
             for name, url, email, state in migration_data:
                 # Check if URL already exists
                 existing = db.session.query(MonitoredURL).filter_by(url=url).first()
@@ -398,8 +317,8 @@ def migrate_data():
                     new_url = MonitoredURL(
                         name=name,
                         url=url,
-                        email=email,
-                        state=state,
+                        email=email or 'Matt@ExtraPointsMB.com',
+                        state=state if state else None,
                         is_active=True
                     )
                     db.session.add(new_url)
