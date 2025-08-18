@@ -1,139 +1,100 @@
 #!/usr/bin/env python3
 """
-Pre-deployment checklist and verification script
-Ensures all systems are ready for production deployment
+Pre-deployment checklist to ensure production readiness.
+Verifies database integrity and application configuration.
 """
 
-import sys
-import logging
-from datetime import datetime, timedelta
-sys.path.append('.')
+import os
+import psycopg2
+from datetime import datetime
 
-from app import app, db
-from models import MonitoredURL, StaffChange, ScrapingLog
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-def run_deployment_checklist():
-    """Run comprehensive pre-deployment checklist"""
-    
-    print("🚀 DEPLOYMENT READINESS CHECKLIST")
-    print("=" * 50)
-    print(f"Check performed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+def check_deployment_readiness():
+    """Check if the application is ready for production deployment"""
+    print("=== DEPLOYMENT READINESS CHECK ===")
+    print(f"Timestamp: {datetime.now()}")
     print()
     
-    with app.app_context():
+    # Check database connection and count
+    try:
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cursor = conn.cursor()
         
-        # 1. Database Health Check
-        print("1. DATABASE HEALTH CHECK")
-        try:
-            total_urls = db.session.query(MonitoredURL).count()
-            active_urls = db.session.query(MonitoredURL).filter_by(is_active=True).count()
-            total_changes = db.session.query(StaffChange).count()
-            
-            print(f"   ✅ Total URLs: {total_urls}")
-            print(f"   ✅ Active URLs: {active_urls}")
-            print(f"   ✅ Staff Changes Recorded: {total_changes}")
-            print(f"   ✅ Database Connection: Working")
-        except Exception as e:
-            print(f"   ❌ Database Error: {e}")
-            return False
+        cursor.execute('SELECT COUNT(*) FROM monitored_url;')
+        url_count = cursor.fetchone()[0]
         
-        # 2. Recent Activity Check
-        print("\n2. RECENT ACTIVITY CHECK")
-        recent_logs = db.session.query(ScrapingLog).filter(
-            ScrapingLog.scraped_at > datetime.utcnow() - timedelta(hours=24)
-        ).count()
+        cursor.execute('SELECT COUNT(*) FROM monitored_url WHERE is_active = true;')
+        active_count = cursor.fetchone()[0]
         
-        if recent_logs > 0:
-            print(f"   ✅ Recent scraping activity: {recent_logs} logs in last 24h")
+        print(f"✓ Database connection: OK")
+        print(f"✓ Total URLs in database: {url_count}")
+        print(f"✓ Active URLs: {active_count}")
+        
+        if url_count >= 225:
+            print("✓ Database has complete dataset (225+ institutions)")
         else:
-            print("   ⚠️  No recent scraping activity - scheduler may need restart")
-        
-        # 3. Sample URLs Test
-        print("\n3. SAMPLE URL VERIFICATION")
-        sample_schools = ['Alabama A&M', 'Auburn', 'New Mexico State']
-        working_samples = 0
-        
-        for school in sample_schools:
-            url_obj = db.session.query(MonitoredURL).filter(
-                MonitoredURL.name.ilike(f'%{school}%')
-            ).first()
+            print(f"❌ Database incomplete: only {url_count} URLs (need 225)")
+            return False
             
-            if url_obj and url_obj.last_checked:
-                hours_since_check = (datetime.utcnow() - url_obj.last_checked).total_seconds() / 3600
-                if hours_since_check < 48:  # Within last 2 days
-                    print(f"   ✅ {school}: Recently checked")
-                    working_samples += 1
-                else:
-                    print(f"   ⚠️  {school}: Last checked {hours_since_check:.1f}h ago")
-            else:
-                print(f"   ❌ {school}: Not found or never checked")
+        cursor.close()
+        conn.close()
         
-        # 4. Configuration Check
-        print("\n4. CONFIGURATION CHECK")
-        config_items = [
-            ("Database URL", "DATABASE_URL"),
-            ("Email Config", "SMTP_SERVER"),
-            ("Session Secret", "SESSION_SECRET")
-        ]
-        
-        for item_name, env_var in config_items:
-            try:
-                import os
-                if os.environ.get(env_var):
-                    print(f"   ✅ {item_name}: Configured")
-                else:
-                    print(f"   ⚠️  {item_name}: Not configured")
-            except:
-                print(f"   ❌ {item_name}: Error checking")
-        
-        # 5. System Summary
-        print("\n5. DEPLOYMENT SUMMARY")
-        print(f"   📊 Total Institutions: {active_urls}")
-        print(f"   🎯 Success Rate: ~85-90% (based on scan results)")
-        print(f"   📧 Email Notifications: Configured")
-        print(f"   🔄 Auto-monitoring: Every 30 minutes")
-        print(f"   📋 Open Records: Integrated workflow")
-        
-        # 6. Colleague Access Information
-        print("\n6. COLLEAGUE ACCESS GUIDE")
-        print("   🌐 Production URL: Will be available after deployment")
-        print("   👥 Colleague Features:")
-        print("      • Browse all 225 monitored institutions")
-        print("      • View recent staff changes")
-        print("      • Generate Open Records requests")
-        print("      • Access change history portal")
-        print("      • Download change reports")
-        
-        # 7. Known Issues
-        print("\n7. KNOWN ISSUES TO MONITOR")
-        problematic_schools = [
-            "Alabama (rolltide.com) - Low staff count",
-            "Ohio State - Low staff count", 
-            "NC State - Low staff count",
-            "New Mexico - Low staff count"
-        ]
-        
-        print("   ⚠️  Schools needing scraping fixes:")
-        for school in problematic_schools:
-            print(f"      • {school}")
-        
-        print("\n8. POST-DEPLOYMENT ACTIONS")
-        print("   □ Share production URL with colleagues")
-        print("   □ Monitor first 24 hours for activity")
-        print("   □ Verify email notifications work")
-        print("   □ Check scheduler is running properly")
-        print("   □ Test Open Records workflow")
-        
-        print("\n" + "=" * 50)
-        print("✅ SYSTEM READY FOR DEPLOYMENT")
-        print("The application is prepared for production use by colleagues.")
-        print("All core functionality is operational with 225 institutions monitored.")
-        print("=" * 50)
-        
+    except Exception as e:
+        print(f"❌ Database check failed: {e}")
+        return False
+    
+    # Check environment variables
+    required_env_vars = [
+        'DATABASE_URL',
+        'SESSION_SECRET',
+        'SMTP_SERVER',
+        'SMTP_USERNAME',
+        'FROM_EMAIL'
+    ]
+    
+    print("\n--- Environment Variables ---")
+    all_env_ok = True
+    for var in required_env_vars:
+        if os.environ.get(var):
+            print(f"✓ {var}: Set")
+        else:
+            print(f"❌ {var}: Missing")
+            all_env_ok = False
+    
+    # Check application files
+    print("\n--- Application Files ---")
+    required_files = [
+        'main.py',
+        'app.py', 
+        'routes.py',
+        'models.py',
+        'scheduler_service.py',
+        'scraper.py',
+        'complete_database_export.py'
+    ]
+    
+    all_files_ok = True
+    for file in required_files:
+        if os.path.exists(file):
+            print(f"✓ {file}: Present")
+        else:
+            print(f"❌ {file}: Missing")
+            all_files_ok = False
+    
+    print(f"\n=== DEPLOYMENT STATUS ===")
+    
+    if url_count >= 225 and all_env_ok and all_files_ok:
+        print("🎉 READY FOR DEPLOYMENT!")
+        print("The application is configured correctly with the complete dataset.")
+        print(f"Your colleagues will have access to all {url_count} institutions.")
         return True
+    else:
+        print("❌ NOT READY FOR DEPLOYMENT")
+        print("Please fix the issues above before deploying.")
+        return False
 
 if __name__ == "__main__":
-    run_deployment_checklist()
+    ready = check_deployment_readiness()
+    if ready:
+        print("\n✓ You can now click the Deploy button in Replit to create a fresh production deployment.")
+    else:
+        print("\n❌ Please address the issues above before deployment.")
