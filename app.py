@@ -36,7 +36,3 @@ with app.app_context():
     
     # Import routes
     import routes
-    
-    # Start the scheduler
-    from scheduler_service import start_scheduler
-    start_scheduler()
