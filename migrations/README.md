@@ -6,10 +6,11 @@ This folder contains all database migration files and scripts for the Staff Dire
 
 ```
 migrations/
-├── sql/           # SQL migration files
-├── scripts/       # Python migration utilities
-├── data/          # Migration data files
-└── README.md      # This file
+├── sql/                    # SQL migration files
+├── scripts/               # Python migration utilities
+├── data/                  # Migration data files and backups
+├── README.md              # Migration overview (this file)
+└── BACKUP_PROCEDURES.md   # Complete backup documentation
 ```
 
 ## SQL Migrations (`sql/`)
@@ -31,6 +32,12 @@ migrations/
 
 ## Migration Scripts (`scripts/`)
 
+**backup_production_database.py**
+- Creates complete backups before any database changes
+- Uses pg_dump for full PostgreSQL backups
+- Includes fallback method and error handling
+- **Always run before migrations or major changes**
+
 **complete_database_export.py**
 - Python script to generate complete database exports
 - Creates SQL INSERT statements from current database state
@@ -43,12 +50,18 @@ migrations/
 **fix_production_database.py**
 - Production database repair script
 - Handles data inconsistencies and fixes
+- Updated to reference correct migration file paths
 
 ## Data Files (`data/`)
 
 **migration_data_complete.txt**
 - Migration completion status tracker
 - Contains metadata about completed migrations
+
+**production_backup_*.sql**
+- Timestamped database backups created before major changes
+- Complete PostgreSQL dumps with schema and data
+- Essential for disaster recovery and rollback procedures
 
 ## Usage
 
@@ -83,11 +96,20 @@ migrations/
 
 ## Best Practices
 
-1. **Always backup** before running migrations
+1. **Always backup** before running migrations:
+   ```bash
+   python migrations/scripts/backup_production_database.py
+   ```
 2. **Test migrations** in development first
 3. **Use descriptive names** with version numbers
 4. **Include rollback scripts** when possible
 5. **Document changes** in commit messages
+6. **Verify backups** before proceeding with changes
+
+## Documentation
+
+- **migrations/README.md** - This overview and usage guide
+- **migrations/BACKUP_PROCEDURES.md** - Complete backup documentation and emergency procedures
 
 ## Current Status
 
