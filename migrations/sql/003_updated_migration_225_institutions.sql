@@ -3,8 +3,6 @@
 
 -- Clear existing data (optional)
 DELETE FROM monitored_url;
-DELETE FROM staff_change;
-DELETE FROM scraping_log;
 
 -- Insert all 225 URLs from development database
 INSERT INTO monitored_url (name, url, email, state, is_active, created_at) VALUES ('Alabama State University', 'https://bamastatesports.com/staff-directory', 'Matt@ExtraPointsMB.com', NULL, true, NOW());
