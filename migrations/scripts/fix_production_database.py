@@ -39,10 +39,8 @@ def run_migration():
         current_count = cursor.fetchone()[0]
         print(f"Current URLs in production: {current_count}")
         
-        # Clear existing data
-        print("Clearing existing data...")
-        cursor.execute("DELETE FROM staff_change;")
-        cursor.execute("DELETE FROM scraping_log;") 
+        # Clear existing monitored URLs only (preserve logs and staff changes)
+        print("Clearing existing monitored URLs...")
         cursor.execute("DELETE FROM monitored_url;")
         
         # Read migration data from file
