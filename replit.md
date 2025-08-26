@@ -74,11 +74,22 @@ Primary use case: Filing Open Records Requests for college athletic staff contra
 - **File system**: Local storage for SQLite database in development mode
 - **Network access**: Outbound HTTP/HTTPS for scraping target websites and sending emails
 
-## Current Issues (Aug 18, 2025)
+## Recent Changes (Aug 26, 2025)
+- **Migration Organization**: ✅ All database migration files organized into `migrations/` folder structure
+- **Migration Scripts**: ✅ Updated to reference correct file paths in new locations
 - **Development**: ✅ Working perfectly with 225 institutions
 - **Production deployment**: ❌ https://workspace-mattbrownep.replit.app shows 404 errors
 - **Alternative production URL**: https://roster-watch-mattbrownep.replit.app (has 80 URLs, needs migration)
 - **User requirement**: Urgent need for colleagues to access complete 225-institution database
+
+## Migration Structure
+```
+migrations/
+├── sql/           # Numbered SQL migration files (001, 002, 003)
+├── scripts/       # Python migration utilities
+├── data/          # Migration data and status files
+└── README.md      # Complete migration documentation
+```
 
 ## Tomorrow's Options
 1. **Fix current deployment**: Debug why workspace-mattbrownep.replit.app fails despite working locally

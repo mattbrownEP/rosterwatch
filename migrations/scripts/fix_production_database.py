@@ -2,6 +2,9 @@
 """
 Script to properly migrate data to production database.
 This will run the SQL commands directly against the production database.
+
+Uses: migrations/sql/003_updated_migration_225_institutions.sql
+Run from project root: python migrations/scripts/fix_production_database.py
 """
 
 import os
@@ -44,7 +47,14 @@ def run_migration():
         
         # Read migration data from file
         print("Reading migration data...")
-        with open('updated_migration_225.sql', 'r') as f:
+        # Get the project root directory (two levels up from this script)
+        current_dir = os.path.dirname(os.path.abspath(__file__))  # migrations/scripts/
+        migrations_dir = os.path.dirname(current_dir)  # migrations/
+        project_root = os.path.dirname(migrations_dir)  # project root
+        migration_file = os.path.join(project_root, 'migrations', 'sql', '003_updated_migration_225_institutions.sql')
+        
+        print(f"Looking for migration file at: {migration_file}")
+        with open(migration_file, 'r') as f:
             migration_sql = f.read()
         
         # Extract only INSERT statements
