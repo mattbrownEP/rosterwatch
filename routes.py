@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from urllib.parse import urlparse
@@ -471,3 +472,105 @@ def utility_processor():
         get_state_name=get_state_name,
         get_priority_badge_class=get_priority_badge_class
     )
+
+# Test scenarios data (development only)
+TEST_SCENARIOS = {
+    1: {
+        'name': 'Baseline Scenario',
+        'description': 'Initial staff configuration with 8 staff members',
+        'staff': [
+            {'name': 'John Smith', 'title': 'Head Football Coach', 'department': 'Athletics'},
+            {'name': 'Sarah Johnson', 'title': 'Athletic Director', 'department': 'Athletics'},
+            {'name': 'Mike Davis', 'title': 'Assistant Football Coach', 'department': 'Athletics'},
+            {'name': 'Lisa Brown', 'title': 'Basketball Coach', 'department': 'Athletics'},
+            {'name': 'Tom Wilson', 'title': 'Facilities Manager', 'department': 'Athletics'},
+            {'name': 'Amy Taylor', 'title': 'Academic Advisor', 'department': 'Athletics'},
+            {'name': 'Chris Lee', 'title': 'Strength & Conditioning Coach', 'department': 'Athletics'},
+            {'name': 'Jennifer Martinez', 'title': 'Sports Information Director', 'department': 'Athletics'}
+        ]
+    },
+    2: {
+        'name': 'Staff Addition',
+        'description': 'Added 2 new staff members, removed 1',
+        'staff': [
+            {'name': 'John Smith', 'title': 'Head Football Coach', 'department': 'Athletics'},
+            {'name': 'Sarah Johnson', 'title': 'Athletic Director', 'department': 'Athletics'},
+            {'name': 'Mike Davis', 'title': 'Assistant Football Coach', 'department': 'Athletics'},
+            {'name': 'Lisa Brown', 'title': 'Basketball Coach', 'department': 'Athletics'},
+            # Removed Tom Wilson
+            {'name': 'Amy Taylor', 'title': 'Academic Advisor', 'department': 'Athletics'},
+            {'name': 'Chris Lee', 'title': 'Strength & Conditioning Coach', 'department': 'Athletics'},
+            {'name': 'Jennifer Martinez', 'title': 'Sports Information Director', 'department': 'Athletics'},
+            # New additions
+            {'name': 'David Rodriguez', 'title': 'Assistant Athletic Director', 'department': 'Athletics'},
+            {'name': 'Kelly Thompson', 'title': 'Equipment Manager', 'department': 'Athletics'}
+        ]
+    },
+    3: {
+        'name': 'Title Changes',
+        'description': 'Several staff members got promotions and title changes',
+        'staff': [
+            {'name': 'John Smith', 'title': 'Head Football Coach', 'department': 'Athletics'},
+            {'name': 'Sarah Johnson', 'title': 'Senior Athletic Director', 'department': 'Athletics'},  # Promoted
+            {'name': 'Mike Davis', 'title': 'Associate Football Coach', 'department': 'Athletics'},  # Promoted
+            {'name': 'Lisa Brown', 'title': 'Head Basketball Coach', 'department': 'Athletics'},  # Promoted
+            {'name': 'Amy Taylor', 'title': 'Senior Academic Advisor', 'department': 'Athletics'},  # Promoted
+            {'name': 'Chris Lee', 'title': 'Director of Strength & Conditioning', 'department': 'Athletics'},  # Promoted
+            {'name': 'Jennifer Martinez', 'title': 'Sports Information Director', 'department': 'Athletics'},
+            {'name': 'David Rodriguez', 'title': 'Assistant Athletic Director', 'department': 'Athletics'},
+            {'name': 'Kelly Thompson', 'title': 'Equipment Manager', 'department': 'Athletics'}
+        ]
+    },
+    4: {
+        'name': 'Major Restructuring',
+        'description': 'Significant changes: new hires, departures, and reorganization',
+        'staff': [
+            {'name': 'John Smith', 'title': 'Head Football Coach', 'department': 'Athletics'},
+            # Sarah Johnson left
+            {'name': 'Michael Anderson', 'title': 'Athletic Director', 'department': 'Athletics'},  # New hire
+            {'name': 'Mike Davis', 'title': 'Associate Football Coach', 'department': 'Athletics'},
+            {'name': 'Lisa Brown', 'title': 'Head Basketball Coach', 'department': 'Athletics'},
+            {'name': 'Amy Taylor', 'title': 'Senior Academic Advisor', 'department': 'Athletics'},
+            # Chris Lee left
+            {'name': 'Jennifer Martinez', 'title': 'Communications Director', 'department': 'Athletics'},  # Title change
+            {'name': 'David Rodriguez', 'title': 'Associate Athletic Director', 'department': 'Athletics'},  # Promoted
+            {'name': 'Kelly Thompson', 'title': 'Operations Manager', 'department': 'Athletics'},  # Title change
+            {'name': 'Rachel Green', 'title': 'Head Strength Coach', 'department': 'Athletics'},  # New hire
+            {'name': 'Mark Johnson', 'title': 'Compliance Officer', 'department': 'Athletics'}  # New hire
+        ]
+    }
+}
+
+# Current scenario state (stored in memory for development)
+current_test_scenario = 1
+
+@app.route('/sample-college-directory')
+def sample_college_directory():
+    """Development-only test directory page with scenario switching."""
+    # Only available in development
+    if os.environ.get("REPLIT_DEPLOYMENT") == "1":
+        return "Not available in production", 404
+    
+    global current_test_scenario
+    scenario = TEST_SCENARIOS[current_test_scenario]
+    
+    return render_template('sample_directory.html', 
+                         scenario=scenario,
+                         current_scenario=current_test_scenario,
+                         all_scenarios=TEST_SCENARIOS)
+
+@app.route('/sample-college-directory/switch/<int:scenario_id>')
+def switch_test_scenario(scenario_id):
+    """Switch to a different test scenario."""
+    # Only available in development
+    if os.environ.get("REPLIT_DEPLOYMENT") == "1":
+        return "Not available in production", 404
+    
+    global current_test_scenario
+    if scenario_id in TEST_SCENARIOS:
+        current_test_scenario = scenario_id
+        flash(f'Switched to scenario {scenario_id}: {TEST_SCENARIOS[scenario_id]["name"]}', 'success')
+    else:
+        flash('Invalid scenario ID', 'error')
+    
+    return redirect(url_for('sample_college_directory'))
