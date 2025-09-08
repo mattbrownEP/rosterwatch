@@ -39,6 +39,16 @@ class StaffChange(db.Model):
     open_records_date = db.Column(db.DateTime)
     open_records_status = db.Column(db.String(50), default='not_filed')  # 'not_filed', 'pending', 'received', 'denied'
 
+class StaffListSnapshot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    monitored_url_id = db.Column(db.Integer, db.ForeignKey('monitored_url.id'), nullable=False)
+    staff_data = db.Column(db.JSON, nullable=False)  # Store full staff list as JSON
+    content_hash = db.Column(db.String(64), nullable=False)  # Hash for quick comparison
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationship to monitored URL
+    monitored_url = db.relationship('MonitoredURL', backref='staff_snapshots')
+
 class ScrapingLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     monitored_url_id = db.Column(db.Integer, db.ForeignKey('monitored_url.id'), nullable=False)
