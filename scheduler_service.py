@@ -5,7 +5,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 import atexit
 
 from app import app, db
-from models import MonitoredURL, StaffChange, ScrapingLog
+from models import MonitoredURL, StaffChange, ScrapingLog, StaffListSnapshot
 from scraper import StaffDirectoryScraper
 from email_service import EmailService
 from open_records_service import OpenRecordsService
@@ -169,16 +169,54 @@ def monitor_single_url(monitored_url):
 
 def get_previous_staff_list(monitored_url_id):
     """Retrieve the previous staff list for comparison."""
-    # This is a simple implementation - in a production system,
-    # you might want to store full staff lists in a separate table
-    # For now, we'll reconstruct from recent changes
-    return []
+    try:
+        # Get the most recent staff snapshot for this URL
+        latest_snapshot = StaffListSnapshot.query.filter_by(
+            monitored_url_id=monitored_url_id
+        ).order_by(StaffListSnapshot.created_at.desc()).first()
+        
+        if latest_snapshot:
+            logger.debug(f"Retrieved previous staff list for URL {monitored_url_id} with {len(latest_snapshot.staff_data)} staff members")
+            return latest_snapshot.staff_data
+        else:
+            logger.debug(f"No previous staff list found for URL {monitored_url_id}")
+            return []
+            
+    except Exception as e:
+        logger.error(f"Error retrieving previous staff list for URL {monitored_url_id}: {str(e)}")
+        return []
 
 def store_staff_list(monitored_url_id, staff_list):
     """Store the current staff list for future comparison."""
-    # In a production system, you might store this in a separate table
-    # For now, we rely on the content hash for change detection
-    pass
+    try:
+        import hashlib
+        import json
+        
+        # Create content hash for the staff list
+        staff_json = json.dumps(staff_list, sort_keys=True)
+        content_hash = hashlib.sha256(staff_json.encode()).hexdigest()
+        
+        # Create new snapshot record
+        snapshot = StaffListSnapshot(
+            monitored_url_id=monitored_url_id,
+            staff_data=staff_list,
+            content_hash=content_hash
+        )
+        
+        db.session.add(snapshot)
+        
+        # Clean up old snapshots (keep only the last 10 for each URL)
+        old_snapshots = StaffListSnapshot.query.filter_by(
+            monitored_url_id=monitored_url_id
+        ).order_by(StaffListSnapshot.created_at.desc()).offset(10).all()
+        
+        for old_snapshot in old_snapshots:
+            db.session.delete(old_snapshot)
+            
+        logger.debug(f"Stored staff list snapshot for URL {monitored_url_id}")
+        
+    except Exception as e:
+        logger.error(f"Error storing staff list for URL {monitored_url_id}: {str(e)}")
 
 def cleanup_old_logs():
     """Clean up old scraping logs to prevent database bloat."""
