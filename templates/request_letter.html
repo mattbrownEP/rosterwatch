@@ -130,8 +130,9 @@
                         Send to: <strong>{{ monitored_url.open_records_email }}</strong>
                     {% endif %}
                 </div>
-                
-                <div class="bg-light p-3 border rounded" style="font-family: monospace; white-space: pre-line;" id="requestLetter">{{ request_letter }}</div>
+
+                <div class="bg-light p-3 border rounded text-dark" style="font-family: monospace; white-space: pre-line;"
+                    id="requestLetter">{{ request_letter }}</div>
             </div>
         </div>
     </div>
@@ -172,7 +173,7 @@
 function copyRequestLetter() {
     const requestLetter = document.getElementById('requestLetter');
     const text = requestLetter.textContent;
-    
+
     navigator.clipboard.writeText(text).then(function() {
         // Show success feedback
         const button = event.target.closest('button');
@@ -180,7 +181,7 @@ function copyRequestLetter() {
         button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
         button.classList.remove('btn-outline-primary');
         button.classList.add('btn-success');
-        
+
         setTimeout(function() {
             button.innerHTML = originalHTML;
             button.classList.remove('btn-success');
