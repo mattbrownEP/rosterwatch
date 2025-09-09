@@ -130,9 +130,7 @@
                     </div>
                     <div class="col-md-3">
                         <label for="search" class="form-label">Search</label>
-                        <input type="text" 
-                               class="form-control" 
-                               name="search" 
+                        <input type="text" class="form-control" name="search"
                                id="search"
                                placeholder="Name, title, or description"
                                value="{{ filters.search }}">
@@ -240,12 +238,12 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ url_for('generate_request', change_id=change.id) }}" 
+                                            <a href="{{ url_for('generate_request', change_id=change.id) }}"
                                                class="btn btn-outline-primary" title="Generate Request">
                                                 <i class="fas fa-file-alt"></i>
                                             </a>
                                             {% if change.position_importance in ['high', 'medium'] and not change.open_records_filed %}
-                                                <a href="{{ url_for('mark_filed', change_id=change.id) }}" 
+                                                <a href="{{ url_for('mark_filed', change_id=change.id) }}"
                                                    class="btn btn-outline-success" title="Mark as Filed">
                                                     <i class="fas fa-paper-plane"></i>
                                                 </a>
@@ -256,7 +254,7 @@
                                 {% if change.change_description %}
                                 <tr class="table-light">
                                     <td colspan="7">
-                                        <small class="text-muted">
+                                        <small class="text-dark">
                                             <i class="fas fa-info-circle me-1"></i>
                                             {{ change.change_description }}
                                         </small>
@@ -324,13 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const searchInput = document.getElementById('search');
     const otherInputs = form.querySelectorAll('select');
-    
+
     otherInputs.forEach(input => {
         input.addEventListener('change', function() {
             form.submit();
         });
     });
-    
+
     // Submit search on Enter
     searchInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
