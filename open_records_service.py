@@ -14,6 +14,8 @@ class OpenRecordsService:
     
     def get_state_info(self, state_code: str) -> Optional[Dict]:
         """Get state-specific Open Records information."""
+        if not state_code:
+            return None
         return self.state_info.get(state_code.upper())
     
     def classify_staff_change(self, staff_name: str, staff_title: str, change_type: str) -> Dict:
