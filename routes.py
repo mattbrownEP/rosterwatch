@@ -27,10 +27,12 @@ def index():
     # Get recent logs
     recent_logs = ScrapingLog.query.order_by(ScrapingLog.scraped_at.desc()).limit(5).all()
 
-    return render_template('index.html',
-                         monitored_urls=monitored_urls,
-                         recent_changes=recent_changes,
-                         recent_logs=recent_logs)
+    return render_template(
+        'index.html',
+        monitored_urls=monitored_urls,
+        recent_changes=recent_changes,
+        recent_logs=recent_logs
+    )
 
 @app.route('/add_url', methods=['GET', 'POST'])
 def add_url():
@@ -165,12 +167,14 @@ def view_changes(url_id):
     per_page = 20
 
     changes = StaffChange.query.filter_by(monitored_url_id=url_id)\
-                             .order_by(StaffChange.detected_at.desc())\
-                             .paginate(page=page, per_page=per_page, error_out=False)
+                            .order_by(StaffChange.detected_at.desc())\
+                            .paginate(page=page, per_page=per_page, error_out=False)
 
-    return render_template('view_changes.html',
-                         monitored_url=monitored_url,
-                         changes=changes)
+    return render_template(
+        'view_changes.html',
+        monitored_url=monitored_url,
+        changes=changes
+    )
 
 @app.route('/test_email')
 def test_email():
@@ -252,17 +256,19 @@ def changes_portal():
     institutions = db.session.query(MonitoredURL.name).distinct().order_by(MonitoredURL.name).all()
     institutions = [inst[0] for inst in institutions]
 
-    return render_template('changes_portal.html',
-                         changes=changes,
-                         summary=summary,
-                         institutions=institutions,
-                         filters={
-                             'days': days,
-                             'type': change_type,
-                             'priority': priority,
-                             'institution': institution,
-                             'search': search
-                         })
+    return render_template(
+        'changes_portal.html',
+        changes=changes,
+        summary=summary,
+        institutions=institutions,
+        filters={
+            'days': days,
+            'type': change_type,
+            'priority': priority,
+            'institution': institution,
+            'search': search
+        }
+    )
 
 @app.route('/open_records')
 def open_records_dashboard():
@@ -313,10 +319,12 @@ def scraper_debug():
             flash(f"Error testing scraper: {str(e)}", "danger")
             logger.exception("Scraper debug error")
 
-    return render_template('scraper_debug.html',
-                          url=url,
-                          debug_info=debug_info,
-                          staff_list=staff_list)
+    return render_template(
+        'scraper_debug.html',
+        url=url,
+        debug_info=debug_info,
+        staff_list=staff_list
+    )
 
 @app.route('/admin/migrate-data', methods=['GET', 'POST'])
 def migrate_data():
@@ -366,9 +374,11 @@ def migrate_data():
 
     # GET request - show migration page
     current_count = db.session.query(MonitoredURL).count()
-    return render_template('admin_migrate.html',
-                         current_count=current_count,
-                         total_available=current_count)
+    return render_template(
+        'admin_migrate.html',
+        current_count=current_count,
+        total_available=current_count
+    )
 
 @app.route('/generate_request/<int:change_id>')
 def generate_request(change_id):
@@ -397,10 +407,12 @@ def generate_request(change_id):
     # Generate the request letter
     request_letter = open_records_service.generate_request_letter(change_data, institution_data)
 
-    return render_template('request_letter.html',
-                         change=change,
-                         monitored_url=monitored_url,
-                         request_letter=request_letter)
+    return render_template(
+        'request_letter.html',
+        change=change,
+        monitored_url=monitored_url,
+        request_letter=request_letter
+    )
 
 @app.route('/mark_filed/<int:change_id>')
 def mark_filed(change_id):
@@ -446,9 +458,11 @@ def update_institution(url_id):
     # Get state info for form
     from state_info import STATE_INFO
 
-    return render_template('update_institution.html',
-                         monitored_url=monitored_url,
-                         state_info=STATE_INFO)
+    return render_template(
+        'update_institution.html',
+        monitored_url=monitored_url,
+        state_info=STATE_INFO
+    )
 
 @app.context_processor
 def utility_processor():
@@ -581,10 +595,12 @@ def sample_college_directory():
     global current_test_scenario
     scenario = TEST_SCENARIOS[current_test_scenario]
 
-    return render_template('sample_directory.html',
-                         scenario=scenario,
-                         current_scenario=current_test_scenario,
-                         all_scenarios=TEST_SCENARIOS)
+    return render_template(
+        'sample_directory.html',
+        scenario=scenario,
+        current_scenario=current_test_scenario,
+        all_scenarios=TEST_SCENARIOS
+    )
 
 @app.route('/sample-college-directory/switch/<int:scenario_id>')
 def switch_test_scenario(scenario_id):
