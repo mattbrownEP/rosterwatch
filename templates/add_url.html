@@ -17,10 +17,7 @@
                         <label for="name" class="form-label">
                             <i class="fas fa-tag me-1"></i>Site Name
                         </label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="name" 
-                               name="name" 
+                        <input type="text" class="form-control" id="name" name="name"
                                placeholder="e.g., University of Example Athletics"
                                value="{{ request.form.get('name', '') }}"
                                required>
@@ -33,10 +30,7 @@
                         <label for="url" class="form-label">
                             <i class="fas fa-link me-1"></i>Staff Directory URL
                         </label>
-                        <input type="url" 
-                               class="form-control" 
-                               id="url" 
-                               name="url" 
+                        <input type="url" class="form-control" id="url" name="url"
                                placeholder="https://example.edu/athletics/staff"
                                value="{{ request.form.get('url', '') }}"
                                required>
@@ -49,10 +43,7 @@
                         <label for="email" class="form-label">
                             <i class="fas fa-envelope me-1"></i>Notification Email
                         </label>
-                        <input type="email" 
-                               class="form-control" 
-                               id="email" 
-                               name="email" 
+                        <input type="email" class="form-control" id="email" name="email"
                                placeholder="your-email@example.com"
                                value="{{ request.form.get('email', '') }}"
                                required>
@@ -63,7 +54,7 @@
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Note:</strong> When you add a URL, the system will immediately attempt to scrape it to verify it works. 
+                        <strong>Note:</strong> When you add a URL, the system will immediately attempt to scrape it to verify it works.
                         The initial scraping will establish a baseline for future change detection.
                     </div>
 
@@ -109,14 +100,15 @@
                         </ul>
                     </div>
                 </div>
-                
+
                 <div class="alert alert-warning mt-3">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Important:</strong> Make sure you have permission to monitor the website and that your monitoring 
+                    <strong>Important:</strong> Make sure you have permission to monitor the website and that your monitoring
                     complies with the site's terms of service and robots.txt file.
                 </div>
             </div>
         </div>
+{% include 'debug_info.html' %}
     </div>
 </div>
 {% endblock %}
@@ -132,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = 'https://' + url;
         }
     });
-    
+
     // Form validation feedback
     const form = document.querySelector('form');
     form.addEventListener('submit', function(e) {

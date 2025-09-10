@@ -18,17 +18,17 @@ logging.basicConfig(level=logging.WARNING)  # Reduce noise during scan
 
 def scan_all_schools():
     """Scan all active URLs and report on their status"""
-    
+
     with app.app_context():
         # Get all active URLs
         urls = db.session.query(MonitoredURL).filter_by(is_active=True).order_by(MonitoredURL.name).all()
-        
+
         print(f"🔍 Starting comprehensive scan of {len(urls)} schools...")
         print(f"Scan started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 80)
-        
+
         scraper = StaffDirectoryScraper()
-        
+
         # Tracking variables
         total_scanned = 0
         successful_scans = 0
@@ -36,20 +36,20 @@ def scan_all_schools():
         low_count_schools = []
         changed_schools = []
         error_schools = []
-        
+
         for i, url_obj in enumerate(urls, 1):
             total_scanned += 1
             print(f"\n[{i:3d}/{len(urls)}] {url_obj.name}")
             print(f"         URL: {url_obj.url}")
-            
+
             try:
                 # Perform the scrape
-                staff_list, content_hash = scraper.scrape_staff_directory(url_obj.url)
-                
+                staff_list, content_hash, _ = scraper.scrape_staff_directory(url_obj.url)
+
                 if staff_list is not None:
                     staff_count = len(staff_list)
                     successful_scans += 1
-                    
+
                     # Check for content changes
                     if url_obj.last_content_hash and url_obj.last_content_hash != content_hash:
                         changed_schools.append({
@@ -62,7 +62,7 @@ def scan_all_schools():
                         print(f"         🔥 CHANGE DETECTED! Staff: {staff_count}")
                     else:
                         print(f"         ✅ No changes. Staff: {staff_count}")
-                    
+
                     # Flag unusually low staff counts
                     if staff_count < 10:
                         low_count_schools.append({
@@ -72,7 +72,7 @@ def scan_all_schools():
                             'sample_staff': [s.get('name', 'Unknown')[:50] for s in staff_list[:3]]
                         })
                         print(f"         ⚠️  LOW COUNT WARNING: Only {staff_count} staff")
-                
+
                 else:
                     failed_scans += 1
                     error_schools.append({
@@ -81,7 +81,7 @@ def scan_all_schools():
                         'error': content_hash  # content_hash contains error message when staff_list is None
                     })
                     print(f"         ❌ SCRAPING FAILED: {content_hash}")
-                    
+
             except Exception as e:
                 failed_scans += 1
                 error_schools.append({
@@ -90,18 +90,18 @@ def scan_all_schools():
                     'error': str(e)
                 })
                 print(f"         💥 EXCEPTION: {str(e)}")
-        
+
         # Generate comprehensive report
         print("\n" + "=" * 80)
         print("COMPREHENSIVE SCAN RESULTS")
         print("=" * 80)
-        
+
         print(f"\n📊 SUMMARY STATISTICS")
         print(f"   Total schools scanned: {total_scanned}")
         print(f"   Successful scans: {successful_scans}")
         print(f"   Failed scans: {failed_scans}")
         print(f"   Success rate: {(successful_scans/total_scanned)*100:.1f}%")
-        
+
         # Report content changes
         print(f"\n🔥 CONTENT CHANGES DETECTED: {len(changed_schools)}")
         if changed_schools:
@@ -110,7 +110,7 @@ def scan_all_schools():
                 print(f"     Hash: {school['old_hash']}... → {school['new_hash']}...")
         else:
             print("   No content changes detected")
-        
+
         # Report low staff count issues
         print(f"\n⚠️  LOW STAFF COUNT WARNINGS: {len(low_count_schools)}")
         if low_count_schools:
@@ -120,7 +120,7 @@ def scan_all_schools():
                 print(f"     Sample: {', '.join(school['sample_staff'])}")
         else:
             print("   All schools have reasonable staff counts")
-        
+
         # Report failures
         print(f"\n❌ SCRAPING FAILURES: {len(error_schools)}")
         if error_schools:
@@ -130,21 +130,21 @@ def scan_all_schools():
                 print(f"     Error: {school['error'][:100]}...")
         else:
             print("   No scraping failures")
-        
+
         # Recommendations
         print(f"\n💡 RECOMMENDATIONS")
         if low_count_schools:
             print(f"   • Investigate {len(low_count_schools)} schools with low staff counts")
             print("   • These may need custom scraping logic or different selectors")
-        
+
         if error_schools:
             print(f"   • Fix {len(error_schools)} schools with scraping failures")
             print("   • Check for site structure changes or blocking")
-        
+
         if not low_count_schools and not error_schools:
             print("   • System is operating optimally!")
             print("   • All schools are scraping correctly")
-        
+
         print(f"\nScan completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 80)
 

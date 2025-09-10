@@ -33,17 +33,41 @@ TITLE_SELECTORS = [
 logger = logging.getLogger(__name__)
 
 class StaffDirectoryScraper:
-    def __init__(self):
+    def __init__(self, debug_mode=False):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+        self.debug_mode = debug_mode
+        self.debug_info = {
+            "url": "",
+            "selector_results": {},
+            "failed_selectors": [],
+            "successful_selectors": [],
+            "name_extraction_results": {},
+            "title_extraction_results": {},
+            "fallback_used": False,
+            "staff_list": []
+        }
 
-    def scrape_staff_directory(self, url: str, max_retries: int = 3) -> Tuple[Optional[List[Dict]], Optional[str]]:
+    def scrape_staff_directory(self, url: str, max_retries: int = 3) -> Tuple[Optional[List[Dict]], Optional[str], Optional[Dict]]:
         """
         Scrape staff directory and return list of staff members and content hash.
-        Returns (staff_list, content_hash) on success, (None, error_message) on failure.
+        Returns (staff_list, content_hash, debug_info) on success, (None, error_message, debug_info) on failure.
         """
+        if self.debug_mode:
+            self.debug_info = {
+                "url": url,
+                "selector_results": {},
+                "failed_selectors": [],
+                "successful_selectors": [],
+                "name_extraction_results": {},
+                "title_extraction_results": {},
+                "fallback_used": False,
+                "staff_list": [],
+                "errors": []
+            }
+
         for attempt in range(max_retries):
             try:
                 logger.info(f"Scraping {url} (attempt {attempt + 1}/{max_retries})")
@@ -58,19 +82,29 @@ class StaffDirectoryScraper:
                 content_hash = self._create_content_hash(staff_list)
 
                 logger.info(f"Successfully scraped {len(staff_list)} staff members from {url}")
-                return staff_list, content_hash
+
+                if self.debug_mode:
+                    self.debug_info["staff_list"] = staff_list
+                    return staff_list, content_hash, self.debug_info
+                return staff_list, content_hash, None
 
             except requests.RequestException as e:
-                logger.warning(f"Request failed for {url} (attempt {attempt + 1}): {str(e)}")
+                error_msg = f"Request failed for {url} (attempt {attempt + 1}): {str(e)}"
+                logger.warning(error_msg)
+                if self.debug_mode:
+                    self.debug_info["errors"].append(error_msg)
                 if attempt == max_retries - 1:
-                    return None, f"Failed to fetch URL after {max_retries} attempts: {str(e)}"
+                    return None, f"Failed to fetch URL after {max_retries} attempts: {str(e)}", self.debug_info if self.debug_mode else None
                 time.sleep(2 ** attempt)  # Exponential backoff
 
             except Exception as e:
-                logger.error(f"Unexpected error scraping {url}: {str(e)}")
-                return None, f"Scraping error: {str(e)}"
+                error_msg = f"Unexpected error scraping {url}: {str(e)}"
+                logger.error(error_msg)
+                if self.debug_mode:
+                    self.debug_info["errors"].append(error_msg)
+                return None, f"Scraping error: {str(e)}", self.debug_info if self.debug_mode else None
 
-        return None, "Maximum retries exceeded"
+        return None, "Maximum retries exceeded", self.debug_info if self.debug_mode else None
 
     def _extract_staff_info(self, soup: BeautifulSoup, base_url: str) -> List[Dict]:
         """
@@ -83,6 +117,9 @@ class StaffDirectoryScraper:
             elements = soup.select(selector)
             if elements:
                 logger.debug(f"Found {len(elements)} elements with selector: {selector}")
+
+                if self.debug_mode:
+                    self.debug_info["selector_results"][selector] = len(elements)
 
                 # Limit processing to prevent timeouts on large sites
                 max_elements = 300
@@ -103,10 +140,16 @@ class StaffDirectoryScraper:
                 # If we found staff with this selector, don't try other selectors
                 if staff_list:
                     logger.info(f"Successfully found {len(staff_list)} staff members with selector: {selector}")
+                    if self.debug_mode:
+                        self.debug_info["successful_selectors"].append(selector)
                     break
+                elif self.debug_mode:
+                    self.debug_info["failed_selectors"].append(selector)
 
         # If no specific selectors work, try to find patterns in the HTML
         if not staff_list:
+            if self.debug_mode:
+                self.debug_info["fallback_used"] = True
             staff_list = self._fallback_extraction(soup, base_url)
 
         # Remove duplicates based on name
@@ -130,6 +173,10 @@ class StaffDirectoryScraper:
                     name_elem = element.select_one(selector)
                     if name_elem and name_elem.get_text(strip=True):
                         name = name_elem.get_text(strip=True)
+                        if self.debug_mode:
+                            if selector not in self.debug_info["name_extraction_results"]:
+                                self.debug_info["name_extraction_results"][selector] = 0
+                            self.debug_info["name_extraction_results"][selector] += 1
                         break
                 except Exception as e:
                     logging.debug(f"Selector '{selector}' failed: {e}")
@@ -140,6 +187,9 @@ class StaffDirectoryScraper:
                 text = element.get_text(strip=True)
                 if text and len(text) < 100:  # Reasonable name length
                     name = text
+                    if self.debug_mode and "element_text" not in self.debug_info["name_extraction_results"]:
+                        self.debug_info["name_extraction_results"]["element_text"] = 0
+                        self.debug_info["name_extraction_results"]["element_text"] += 1
 
             # Extract title/position
             title = None
@@ -151,6 +201,10 @@ class StaffDirectoryScraper:
                         # Avoid using the name as title
                         if title_text != name:
                             title = title_text
+                            if self.debug_mode:
+                                if selector not in self.debug_info["title_extraction_results"]:
+                                    self.debug_info["title_extraction_results"][selector] = 0
+                                self.debug_info["title_extraction_results"][selector] += 1
                             break
                 except Exception as e:
                     logging.debug(f"Title selector '{selector}' failed: {e}")
@@ -177,13 +231,14 @@ class StaffDirectoryScraper:
                 logging.debug(f"Phone extraction failed: {e}")
 
             if name:
-                return {
+                staff_info = {
                     'name': name,
                     'title': title or '',
                     'email': email or '',
                     'phone': phone or '',
                     'element_html': str(element)[:500]  # Store snippet for comparison
                 }
+                return staff_info
 
         except Exception as e:
             logger.debug(f"Error parsing staff element: {str(e)}")

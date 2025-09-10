@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Scraper Debugger{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Scraper Debugger</h1>
+
+    <div class="card bg-dark mb-4">
+        <div class="card-header bg-secondary">
+            <h5 class="mb-0">Test Scraper</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('scraper_debug') }}">
+                <div class="mb-3">
+                    <label for="url" class="form-label">URL to Scrape</label>
+                    <input type="url" class="form-control" id="url" name="url" required
+                           placeholder="https://example.edu/staff-directory" value="{{ url }}">
+                </div>
+                <button type="submit" class="btn btn-primary">Analyze URL</button>
+            </form>
+        </div>
+    </div>
+
+    {% if debug_info %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card bg-dark mb-4">
+                <div class="card-header bg-secondary">
+                    <h5 class="mb-0">Selector Results</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Container Selectors</h6>
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Selector</th>
+                                <th>Elements Found</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for selector, count in debug_info.selector_results.items() %}
+                            <tr>
+                                <td><code>{{ selector }}</code></td>
+                                <td>{{ count }}</td>
+                                <td>
+                                    {% if selector in debug_info.successful_selectors %}
+                                    <span class="badge bg-success">Success</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <h6 class="mt-4">Name Selectors</h6>
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Selector</th>
+                                <th>Successful Uses</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for selector, count in debug_info.name_extraction_results.items() %}
+                            <tr>
+                                <td><code>{{ selector }}</code></td>
+                                <td>{{ count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <h6 class="mt-4">Title Selectors</h6>
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Selector</th>
+                                <th>Successful Uses</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for selector, count in debug_info.title_extraction_results.items() %}
+                            <tr>
+                                <td><code>{{ selector }}</code></td>
+                                <td>{{ count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if debug_info.fallback_used %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i> Fallback extraction was used because no selectors worked.
+                    </div>
+                    {% endif %}
+
+                    {% if debug_info.errors %}
+                    <h6 class="mt-4">Errors</h6>
+                    <ul class="list-group">
+                        {% for error in debug_info.errors %}
+                        <li class="list-group-item list-group-item-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card bg-dark mb-4">
+                <div class="card-header bg-secondary">
+                    <h5 class="mb-0">Extracted Staff ({{ staff_list|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Title</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for staff in staff_list %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ staff.name }}</td>
+                                    <td>{{ staff.title }}</td>
+                                    <td>{{ staff.email }}</td>
+                                    <td>{{ staff.phone }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark mb-4">
+                <div class="card-header bg-secondary">
+                    <h5 class="mb-0">HTML Sample</h5>
+                    <p class="text-muted mb-0">Example of successful HTML element that was parsed</p>
+                </div>
+                <div class="card-body">
+                    {% if staff_list and staff_list[0].element_html %}
+                    <div class="p-3 bg-black rounded">
+                        <pre><code class="html">{{ staff_list[0].element_html }}</code></pre>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No staff data found or no HTML sample available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
