@@ -16,18 +16,21 @@ STAFF_CONTAINER_SELECTORS = [
     # Grid/list items that might contain staff
     '.grid-item', '.list-item', '.directory-item',
     # Generic containers with staff-related keywords
+    '[class*="staff-member"]', '[class*="staff-card"]',
     '[class*="staff"]', '[class*="coach"]', '[class*="person"]'
 ]
 
 NAME_SELECTORS = [
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     '.name', '.staff-name', '.person-name',
-    '.title', '.heading', 'strong', 'b'
+    '.title', '.heading', 'strong', 'b',
+    '.fullname', '[headers*="fullname"]'
 ]
 
 TITLE_SELECTORS = [
-    '.title', '.position', '.job-title', '.role',
-    '.staff-title', '.coach-title', 'em', 'i'
+    '.position', '.job-title', '.role',
+    '.staff-title', '.coach-title', 'em', 'i',
+    '.staff_title', '[headers*="title"]'
 ]
 
 logger = logging.getLogger(__name__)
@@ -187,9 +190,8 @@ class StaffDirectoryScraper:
                 text = element.get_text(strip=True)
                 if text and len(text) < 100:  # Reasonable name length
                     name = text
-                    if self.debug_mode and "element_text" not in self.debug_info["name_extraction_results"]:
-                        self.debug_info["name_extraction_results"]["element_text"] = 0
-                        self.debug_info["name_extraction_results"]["element_text"] += 1
+                    if self.debug_mode:
+                        self.debug_info["name_extraction_results"]["element_text"] = self.debug_info["name_extraction_results"].get("element_text", 0) + 1
 
             # Extract title/position
             title = None
